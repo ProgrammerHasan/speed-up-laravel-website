@@ -1,0 +1,57 @@
+#1 . HTML minification
+Browser doesn't care about the spaces &amp; indentation but it the spaces make our HTML file bigger and make an impact on page speed. We can easily reduce HTML page size by unifying the HTML using Laravel middleware. Let's do HTML modification using laravel middleware.
+
+==============================================================
+php artisan make:middleware HtmlMinifier
+==============================================================
+protected $routeMiddleware = [
+  'htmlMinifier' => '\App\Http\Middleware\HtmlMinifier',
+]
+===============================================================
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Response;
+
+class HtmlMinifier
+{
+    public function handle($request, Closure $next)
+    {
+  
+        $response = $next($request);
+
+        $contentType = $response->headers->get('Content-Type');
+        if (strpos($contentType, 'text/html') !== false) {
+            $response->setContent($this->minify($response->getContent()));
+        }
+
+        return $response;
+
+    }
+
+    public function minify($input)
+    {
+        $search = [
+            '/\>\s+/s',
+            '/\s+</s',
+        ];
+
+        $replace = [
+            '> ',
+            ' <',
+        ];
+
+        return preg_replace($search, $replace, $input);
+    }
+}
+
+=================================================================
+
+Route::group(['middleware'=>'htmlMinifier'], function(){ 
+  
+  Route::get('/', 'HomeController@home');
+
+
+});
